@@ -56,6 +56,19 @@ impl ProgressLogger {
         }
     }
 
+    #[inline]
+    pub fn update_light<N: Into<u64>>(&mut self, cnt: N) {
+        self.count += cnt.into();
+        if self.count % 1_000_000 == 0 {
+            let now = Instant::now();
+            if (now - self.last_logged) > self.frequency {
+                self.log();
+                self.last_logged = now;
+            }
+        }
+    }
+
+    #[inline]
     pub fn update<N: Into<u64>>(&mut self, cnt: N) {
         let cnt: u64 = cnt.into();
         self.count += cnt;
@@ -66,6 +79,7 @@ impl ProgressLogger {
         }
     }
 
+    #[inline]
     pub fn up(&mut self) {
         self.update(1u64);
     }
