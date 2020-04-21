@@ -38,11 +38,15 @@ impl ProgressLogger {
         let elapsed = Instant::now() - self.start;
         let throughput = self.count as f64 / elapsed.as_secs_f64();
         if let Some(expected_updates) = self.expected_updates {
-            let prediction =
-                (expected_updates - self.count) as f64 / throughput;
+            let prediction = (expected_updates - self.count) as f64 / throughput;
             info!(
                 "{:.2?} {} {}, {:.2} s left ({:.2} {}/s)",
-                elapsed, self.count, self.items, prediction, throughput, self.items
+                elapsed,
+                PrettyNumber::from(self.count),
+                self.items,
+                prediction,
+                PrettyNumber::from(throughput),
+                self.items
             );
         } else {
             info!(
@@ -103,3 +107,82 @@ impl ProgressLoggerBuilder {
     }
 }
 
+struct PrettyNumber {
+    rendered: String,
+}
+
+impl std::fmt::Display for PrettyNumber {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.rendered)
+    }
+}
+
+impl std::fmt::Debug for PrettyNumber {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.rendered)
+    }
+}
+
+impl From<u64> for PrettyNumber {
+    fn from(n: u64) -> PrettyNumber {
+        let s = format!("{}", n);
+        let tmp: Vec<char> = s.chars().rev().collect();
+        let mut chunks: Vec<&[char]> = tmp.chunks(3).collect();
+
+        let mut rendered = String::new();
+        let mut ul = chunks.len() % 2 == 1;
+        while let Some(chunk) = chunks.pop() {
+            let mut chunk = Vec::from(chunk);
+            if ul {
+                rendered.push_str("\x1B[0m");
+            } else {
+                rendered.push_str("\x1B[4m");
+            }
+            ul = !ul;
+            while let Some(c) = chunk.pop() {
+                rendered.push(c);
+            }
+        }
+        if ul {
+            rendered.push_str("\x1B[0m");
+        }
+
+        PrettyNumber { rendered }
+    }
+}
+
+impl From<f64> for PrettyNumber {
+    fn from(x: f64) -> PrettyNumber {
+        assert!(x >= 0.0, "only positive number are supported for now");
+        let s = format!("{:.2}", x);
+        let mut parts = s.split(".");
+        let s = parts.next().expect("missing integer part");
+        let decimal = parts.next();
+        let tmp: Vec<char> = s.chars().rev().collect();
+        let mut chunks: Vec<&[char]> = tmp.chunks(3).collect();
+
+        let mut rendered = String::new();
+        let mut ul = chunks.len() % 2 == 1;
+        while let Some(chunk) = chunks.pop() {
+            let mut chunk = Vec::from(chunk);
+            if ul {
+                rendered.push_str("\x1B[0m");
+            } else {
+                rendered.push_str("\x1B[4m");
+            }
+            ul = !ul;
+            while let Some(c) = chunk.pop() {
+                rendered.push(c);
+            }
+        }
+        if ul {
+            rendered.push_str("\x1B[0m");
+        }
+        if let Some(decimal) = decimal {
+            rendered.push('.');
+            rendered.push_str(decimal);
+        }
+
+        PrettyNumber { rendered }
+    }
+}
