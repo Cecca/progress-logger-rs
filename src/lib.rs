@@ -6,22 +6,22 @@ use std::time::{Duration, Instant};
 /// A tool to report the progress of computations. It can be built and configured
 /// using the `builder` function. If given the expected number of updates,
 /// reports the expected time to completion, based on the current throughtput.
-/// 
+///
 /// Progress is reported every 10 seconds by default. See the examples about how
 /// to change it.
-/// 
+///
 /// There are three methods to update the internal counter:
-/// 
+///
 ///  - `update`, for events that don't happen frequently
-///  - `update_light`, which tries to report (by checking the configured frequency 
+///  - `update_light`, which tries to report (by checking the configured frequency
 ///     of updates) only once every million updates. To be used in situations where
 ///     updates are frequent: it's an order of magnitude faster than `update`.
-/// 
+///
 /// Reports are issued on the console using the `info!()` macro from the `log` crate.
 /// Therefore, the reports depend on your logging configuration.
-/// 
+///
 /// Inspired by `ProgressLogger` in the [`dsiutil`](http://dsiutils.di.unimi.it/docs/it/unimi/dsi/logging/ProgressLogger.html) Java library.
-/// 
+///
 /// # Examples
 ///
 /// ## Basic usage
@@ -36,7 +36,7 @@ use std::time::{Duration, Instant};
 /// }
 /// pl.stop();
 /// ```
-/// 
+///
 /// ## Reporting every 5 seconds
 /// ```
 /// use progress_logger::ProgressLogger;
@@ -51,9 +51,9 @@ use std::time::{Duration, Instant};
 ///     pl.update(1u32);
 /// }
 /// pl.stop();
-/// 
+///
 /// ```
-/// 
+///
 /// ## Changing the names of updates
 /// ```
 /// use progress_logger::ProgressLogger;
@@ -104,7 +104,11 @@ impl ProgressLogger {
         } else {
             info!(
                 "{:.2?} {} {} ({:.2} {}/s)",
-                elapsed, self.count, self.items, throughput, self.items
+                elapsed,
+                PrettyNumber::from(self.count),
+                self.items,
+                PrettyNumber::from(throughput),
+                self.items
             );
         }
     }
