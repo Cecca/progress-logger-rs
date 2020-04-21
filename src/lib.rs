@@ -141,7 +141,16 @@ impl ProgressLogger {
 
     /// Stops and drops the progress logger, logging the completion statement
     pub fn stop(self) {
-        self.log();
+        let elapsed = Instant::now() - self.start;
+        let throughput = self.count as f64 / elapsed.as_secs_f64();
+        info!(
+            "Done in {:.2?}. {} {} ({:.2} {}/s)",
+            elapsed,
+            PrettyNumber::from(self.count),
+            self.items,
+            PrettyNumber::from(throughput),
+            self.items
+        );
     }
 }
 
