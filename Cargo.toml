@@ -8,7 +8,10 @@ description = "Simple tool to report the progress of a computation"
 homepage = "https://github.com/Cecca/progress-logger-rs"
 repository = "https://github.com/Cecca/progress-logger-rs"
 readme = "README.md"
-
+include = [
+    "src/*.rs",
+    "Cargo.toml",
+]
 
 [dependencies]
 log = "0.4"
