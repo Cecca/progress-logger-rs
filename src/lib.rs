@@ -3,8 +3,28 @@ extern crate log;
 
 use std::time::{Duration, Instant};
 
+/// A tool to report the progress of computations. It can be built and configured
+/// using the `builder` function. If given the expected number of updates,
+/// reports the expected time to completion, based on the current throughtput.
+/// 
+/// Progress is reported every 10 seconds by default. See the examples about how
+/// to change it.
+/// 
+/// There are three methods to update the internal counter:
+/// 
+///  - `update`, for events that don't happen frequently
+///  - `update_light`, which tries to report (by checking the configured frequency 
+///     of updates) only once every million updates. To be used in situations where
+///     updates are frequent: it's an order of magnitude faster than `update`.
+/// 
+/// Reports are issued on the console using the `info!()` macro from the `log` crate.
+/// Therefore, the reports depend on your logging configuration.
+/// 
+/// Inspired by `ProgressLogger` in the [`dsiutil`](http://dsiutils.di.unimi.it/docs/it/unimi/dsi/logging/ProgressLogger.html) Java library.
+/// 
 /// # Examples
 ///
+/// ## Basic usage
 /// ```
 /// use progress_logger::ProgressLogger;
 ///
@@ -12,7 +32,39 @@ use std::time::{Duration, Instant};
 /// let mut cnt = 0;
 /// for i in 0..10000 {
 ///     cnt += 1;
-///     pl.up();
+///     pl.update(1u32);
+/// }
+/// pl.stop();
+/// ```
+/// 
+/// ## Reporting every 5 seconds
+/// ```
+/// use progress_logger::ProgressLogger;
+/// use std::time::Duration;
+///
+/// let mut pl = ProgressLogger::builder()
+///     .with_frequency(Duration::from_secs(5))
+///     .start();
+/// let mut cnt = 0;
+/// for i in 0..10000 {
+///     cnt += 1;
+///     pl.update(1u32);
+/// }
+/// pl.stop();
+/// 
+/// ```
+/// 
+/// ## Changing the names of updates
+/// ```
+/// use progress_logger::ProgressLogger;
+///
+/// let mut pl = ProgressLogger::builder()
+///     .with_items_name("points")
+///     .start();
+/// let mut cnt = 0;
+/// for i in 0..10000 {
+///     cnt += 1;
+///     pl.update(1u32);
 /// }
 /// pl.stop();
 /// ```
@@ -26,6 +78,7 @@ pub struct ProgressLogger {
 }
 
 impl ProgressLogger {
+    /// Creates a builder to configure a new progress logger
     pub fn builder() -> ProgressLoggerBuilder {
         ProgressLoggerBuilder {
             expected_updates: None,
@@ -56,6 +109,7 @@ impl ProgressLogger {
         }
     }
 
+    /// Try to report progress only once every million updates
     #[inline]
     pub fn update_light<N: Into<u64>>(&mut self, cnt: N) {
         self.count += cnt.into();
@@ -68,6 +122,8 @@ impl ProgressLogger {
         }
     }
 
+    /// Update the internal counter and report progress if the time
+    /// since the last report is greater than the configured duration
     #[inline]
     pub fn update<N: Into<u64>>(&mut self, cnt: N) {
         let cnt: u64 = cnt.into();
@@ -79,16 +135,14 @@ impl ProgressLogger {
         }
     }
 
-    #[inline]
-    pub fn up(&mut self) {
-        self.update(1u64);
-    }
-
+    /// Stops and drops the progress logger, logging the completion statement
     pub fn stop(self) {
         self.log();
     }
 }
 
+/// Builds a new progress logger. All the configurations are optional,
+/// To obtain a builder, use `ProgressLogger::builder()`.
 pub struct ProgressLoggerBuilder {
     expected_updates: Option<u64>,
     items: Option<String>,
@@ -96,18 +150,22 @@ pub struct ProgressLoggerBuilder {
 }
 
 impl ProgressLoggerBuilder {
+    /// Configure the expected number of updates.
     pub fn with_expected_updates<N: Into<u64>>(mut self, updates: N) -> Self {
         self.expected_updates = Some(updates.into());
         self
     }
+    /// Set the name of the items being counted.
     pub fn with_items_name<S: Into<String>>(mut self, name: S) -> Self {
         self.items = Some(name.into());
         self
     }
+    /// Set the frequency of reports on the console.
     pub fn with_frequency(mut self, freq: Duration) -> Self {
         self.frequency = Some(freq);
         self
     }
+    /// Builds the `ProgressLogger`, starting the internal timer.
     pub fn start(self) -> ProgressLogger {
         let now = Instant::now();
         ProgressLogger {

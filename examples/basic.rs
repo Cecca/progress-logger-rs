@@ -16,7 +16,6 @@ fn main() {
     let mut pl = ProgressLogger::builder()
         .with_expected_updates(n)
         .with_frequency(Duration::from_secs(1))
-        .with_items_name("nodes")
         .start();
 
     for _ in 0..n {
@@ -28,21 +27,9 @@ fn main() {
     let mut pl = ProgressLogger::builder()
         .with_expected_updates(n)
         .with_frequency(Duration::from_secs(1))
-        .with_items_name("nodes")
         .start();
     for _ in 0..n {
         pl.update(1u32);
-    }
-    pl.stop();
-
-    info!("Up shorthand");
-    let mut pl = ProgressLogger::builder()
-        .with_expected_updates(n)
-        .with_frequency(Duration::from_secs(1))
-        .with_items_name("nodes")
-        .start();
-    for _ in 0..n {
-        pl.up();
     }
     pl.stop();
 }
