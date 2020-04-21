@@ -1,6 +1,6 @@
 [package]
 name = "progress-logger"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Matteo Ceccarello <mceccarello@unibz.it>"]
 edition = "2018"
 license = "MIT"
