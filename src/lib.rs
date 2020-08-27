@@ -2,6 +2,7 @@
 extern crate log;
 
 use std::time::{Duration, Instant};
+use sysinfo::{System, SystemExt};
 
 /// A tool to report the progress of computations. It can be built and configured
 /// using the `builder` function. If given the expected number of updates,
@@ -75,6 +76,7 @@ pub struct ProgressLogger {
     items: String,
     last_logged: Instant,
     frequency: Duration,
+    system: System,
 }
 
 impl ProgressLogger {
@@ -87,13 +89,18 @@ impl ProgressLogger {
         }
     }
 
-    fn log(&self) {
+    fn log(&mut self) {
         let elapsed = Instant::now() - self.start;
         let throughput = self.count as f64 / elapsed.as_secs_f64();
+        self.system.refresh_memory();
+        let used_kb = PrettyNumber::from(self.system.get_used_memory());
+        let used_swap_kb = PrettyNumber::from(self.system.get_used_swap());
         if let Some(expected_updates) = self.expected_updates {
             let prediction = (expected_updates - self.count) as f64 / throughput;
             info!(
-                "{:.2?} {} {}, {:.2} s left ({:.2} {}/s)",
+                "[mem: {} kB, swap: {} kB] {:.2?} {} {}, {:.2} s left ({:.2} {}/s)",
+                used_kb,
+                used_swap_kb,
                 elapsed,
                 PrettyNumber::from(self.count),
                 self.items,
@@ -103,7 +110,9 @@ impl ProgressLogger {
             );
         } else {
             info!(
-                "{:.2?} {} {} ({:.2} {}/s)",
+                "[mem: {} kB, swap: {} kB] {:.2?} {} {} ({:.2} {}/s)",
+                used_kb,
+                used_swap_kb,
                 elapsed,
                 PrettyNumber::from(self.count),
                 self.items,
@@ -188,6 +197,7 @@ impl ProgressLoggerBuilder {
             items: self.items.unwrap_or_else(|| "updates".to_owned()),
             last_logged: now,
             frequency: self.frequency.unwrap_or_else(|| Duration::from_secs(10)),
+            system: System::default(),
         }
     }
 }
