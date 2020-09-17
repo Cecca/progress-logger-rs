@@ -8,6 +8,10 @@ Currently works only on Linux and MacOS.
 
 ## Changelog
 
+### 0.3.0
+
+- Add method to access time to completion estimate
+
 ### 0.2.0
 
 - Add memory logging 

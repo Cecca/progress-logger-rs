@@ -75,6 +75,8 @@ pub struct ProgressLogger {
     expected_updates: Option<u64>,
     items: String,
     last_logged: Instant,
+    /// the estimated time to completion, in seconds
+    ettc: Option<f64>,
     frequency: Duration,
     system: System,
 }
@@ -97,6 +99,7 @@ impl ProgressLogger {
         let used_swap_kb = PrettyNumber::from(self.system.get_used_swap());
         if let Some(expected_updates) = self.expected_updates {
             let prediction = (expected_updates - self.count) as f64 / throughput;
+            self.ettc.replace(prediction);
             info!(
                 "[mem: {} kB, swap: {} kB] {:.2?} {} {}, {:.2} s left ({:.2} {}/s)",
                 used_kb,
@@ -120,6 +123,11 @@ impl ProgressLogger {
                 self.items
             );
         }
+    }
+
+    /// Get the estimated time to completion, if such prediction is available
+    pub fn time_to_completion(&self) -> Option<Duration> {
+        self.ettc.map(Duration::from_secs_f64)
     }
 
     /// Try to report progress only once every million updates
@@ -196,6 +204,7 @@ impl ProgressLoggerBuilder {
             expected_updates: self.expected_updates,
             items: self.items.unwrap_or_else(|| "updates".to_owned()),
             last_logged: now,
+            ettc: None,
             frequency: self.frequency.unwrap_or_else(|| Duration::from_secs(10)),
             system: System::default(),
         }
